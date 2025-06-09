@@ -2,75 +2,171 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>利益シミュレーター</title>
   <style>
     body {
       font-family: sans-serif;
       padding: 20px;
+      max-width: 480px;
+      margin: auto;
     }
-    input, select {
-      margin: 5px 0;
-      padding: 8px;
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+    }
+    select, input {
       width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      font-size: 18px;
+      width: 100%;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .fee-info {
+      margin-top: 8px;
+      font-size: 14px;
+      background: #f0f0f0;
+      padding: 8px;
+      border-radius: 4px;
     }
     .result {
-      margin-top: 20px;
+      margin-top: 24px;
       font-weight: bold;
+      font-size: 20px;
+      background: #e1f5fe;
+      padding: 12px;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
   <h1>利益シミュレーター</h1>
 
-  <label>スタイルコード</label>
-  <input type="text" id="styleCode" />
+  <label for="styleCode">スタイルコード</label>
+  <input type="text" id="styleCode" placeholder="例: DD1391" />
 
-  <label>サイズ</label>
+  <label for="size">サイズ</label>
   <select id="size">
     <option value="">選択してください</option>
-    <option>23.0</option>
-    <option>23.5</option>
-    <option>24.0</option>
-    <option>24.5</option>
-    <option>25.0</option>
-    <option>25.5</option>
-    <option>26.0</option>
-    <option>26.5</option>
-    <option>27.0</option>
-    <option>27.5</option>
-    <option>28.0</option>
-    <option>28.5</option>
-    <option>29.0</option>
+    <option>23.0</option><option>23.5</option><option>24.0</option><option>24.5</option><option>25.0</option>
+    <option>25.5</option><option>26.0</option><option>26.5</option><option>27.0</option><option>27.5</option>
+    <option>28.0</option><option>28.5</option><option>29.0</option>
   </select>
 
-  <label>仕入れ価格（円）</label>
-  <input type="number" id="buyPrice" />
+  <label for="buySource">仕入れ元</label>
+  <select id="buySource" onchange="updateBuyFees()">
+    <option value="">選択してください</option>
+    <option value="nike">NIKE公式</option>
+    <option value="sneakerdunk_buy">スニダン（購入）</option>
+    <option value="stockx_buy">StockX（購入）</option>
+    <option value="zebio">ゼビオ</option>
+  </select>
+  <div id="buyFeeInfo" class="fee-info"></div>
 
-  <label>販売価格（円）</label>
-  <input type="number" id="sellPrice" />
+  <label for="buyPrice">仕入れ価格（円）</label>
+  <input type="number" id="buyPrice" min="0" />
+
+  <label for="sellSource">販売先</label>
+  <select id="sellSource" onchange="updateSellFees()">
+    <option value="">選択してください</option>
+    <option value="stockx_sell">StockX（販売）</option>
+    <option value="sneakerdunk_sell">スニダン（販売）</option>
+  </select>
+  <div id="sellFeeInfo" class="fee-info"></div>
+
+  <label for="sellPrice">販売価格（円）</label>
+  <input type="number" id="sellPrice" min="0" />
 
   <button onclick="calculateProfit()">利益を計算</button>
 
-  <div class="result" id="result"></div>
+  <div id="result" class="result"></div>
 
   <script>
+    // 仕入れ元の手数料情報（％は小数で）
+    const buySources = {
+      nike: { name: "NIKE公式", feePercent: 0.0, shipping: 0, processFeePercent: 0.0 },
+      sneakerdunk_buy: { name: "スニダン（購入）", feePercent: 0.065, shipping: 1200, processFeePercent: 0.0 },
+      stockx_buy: { name: "StockX（購入）", feePercent: 0.09, shipping: 1200, processFeePercent: 0.03 },
+      zebio: { name: "ゼビオ", feePercent: 0.0, shipping: 1200, processFeePercent: 0.0 }
+    };
+
+    // 販売先の手数料情報
+    const sellSources = {
+      stockx_sell: { name: "StockX（販売）", feePercent: 0.09, shipping: 1200, processFeePercent: 0.03 },
+      sneakerdunk_sell: { name: "スニダン（販売）", feePercent: 0.09, shipping: 1200, processFeePercent: 0.0 }
+    };
+
+    function updateBuyFees() {
+      const buySource = document.getElementById('buySource').value;
+      const info = buySources[buySource];
+      const el = document.getElementById('buyFeeInfo');
+      if (info) {
+        el.innerHTML = `手数料: ${(info.feePercent * 100).toFixed(1)}%<br>送料: ${info.shipping}円<br>決済処理手数料: ${(info.processFeePercent * 100).toFixed(1)}%`;
+      } else {
+        el.innerHTML = '';
+      }
+    }
+
+    function updateSellFees() {
+      const sellSource = document.getElementById('sellSource').value;
+      const info = sellSources[sellSource];
+      const el = document.getElementById('sellFeeInfo');
+      if (info) {
+        el.innerHTML = `手数料: ${(info.feePercent * 100).toFixed(1)}%<br>送料: ${info.shipping}円<br>決済処理手数料: ${(info.processFeePercent * 100).toFixed(1)}%`;
+      } else {
+        el.innerHTML = '';
+      }
+    }
+
     function calculateProfit() {
-      const buy = Number(document.getElementById('buyPrice').value);
-      const sell = Number(document.getElementById('sellPrice').value);
+      const buySourceKey = document.getElementById('buySource').value;
+      const sellSourceKey = document.getElementById('sellSource').value;
+      const buyPrice = Number(document.getElementById('buyPrice').value);
+      const sellPrice = Number(document.getElementById('sellPrice').value);
 
-      const sellFeePercent = 0.09;
-      const processFeePercent = 0.03;
-      const shipping = 1200;
+      if (!buySourceKey || !sellSourceKey) {
+        alert("仕入れ元と販売先を選択してください。");
+        return;
+      }
+      if (buyPrice <= 0 || sellPrice <= 0) {
+        alert("仕入れ価格と販売価格は0より大きい数字を入力してください。");
+        return;
+      }
 
-      const sellFee = sell * sellFeePercent;
-      const processFee = sell * processFeePercent;
+      const buyInfo = buySources[buySourceKey];
+      const sellInfo = sellSources[sellSourceKey];
 
-      const netProfit = sell - sellFee - processFee - shipping - buy;
-      const profitRate = (netProfit / buy) * 100;
+      // 仕入れの送料・手数料は原価に上乗せ
+      const totalBuyCost = buyPrice + buyInfo.shipping + (buyPrice * buyInfo.feePercent) + (buyPrice * buyInfo.processFeePercent);
 
-      document.getElementById('result').innerHTML =
-        `利益：${netProfit.toFixed(0)}円<br>利益率：${profitRate.toFixed(1)}%`;
+      // 販売側の手数料・送料を差し引く
+      const sellFee = sellPrice * sellInfo.feePercent;
+      const sellProcessFee = sellPrice * sellInfo.processFeePercent;
+      const totalSellFee = sellFee + sellProcessFee + sellInfo.shipping;
+
+      const profit = sellPrice - totalSellFee - totalBuyCost;
+      const profitRate = (profit / totalBuyCost) * 100;
+
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `
+        <p>利益額：${profit.toFixed(0)}円</p>
+        <p>利益率：${profitRate.toFixed(1)}%</p>
+      `;
     }
   </script>
 </body>
