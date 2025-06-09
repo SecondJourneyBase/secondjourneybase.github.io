@@ -1,230 +1,77 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>利益シミュレーター</title>
-<style>
-  body { font-family: Arial, sans-serif; padding: 20px; max-width: 480px; margin: auto; }
-  label { display: block; margin-top: 10px; }
-  select, input[type="text"], input[type="number"] { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-  button { margin-top: 15px; padding: 10px; width: 100%; font-size: 16px; }
-  .result { margin-top: 20px; padding: 10px; background: #f0f0f0; border-radius: 5px; }
-  .fee-info { margin-top: 5px; font-size: 14px; color: #555; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>利益シミュレーター</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    input, select {
+      margin: 5px 0;
+      padding: 8px;
+      width: 100%;
+    }
+    .result {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-<h1>利益シミュレーター</h1>
+  <h1>利益シミュレーター</h1>
 
-<label for="styleCode">スタイルコード</label>
-<input type="text" id="styleCode" placeholder="例: DD1391" />
+  <label>スタイルコード</label>
+  <input type="text" id="styleCode" />
 
-<label for="size">サイズ（cm）</label>
-<select id="size"></select>
+  <label>サイズ</label>
+  <select id="size">
+    <option value="">選択してください</option>
+    <option>23.0</option>
+    <option>23.5</option>
+    <option>24.0</option>
+    <option>24.5</option>
+    <option>25.0</option>
+    <option>25.5</option>
+    <option>26.0</option>
+    <option>26.5</option>
+    <option>27.0</option>
+    <option>27.5</option>
+    <option>28.0</option>
+    <option>28.5</option>
+    <option>29.0</option>
+  </select>
 
-<label for="purchaseSite">仕入れ先</label>
-<select id="purchaseSite"></select>
-<div id="purchaseFee" class="fee-info"></div>
+  <label>仕入れ価格（円）</label>
+  <input type="number" id="buyPrice" />
 
-<label for="purchasePrice">仕入価格 (円)</label>
-<input type="number" id="purchasePrice" min="0" step="1" />
+  <label>販売価格（円）</label>
+  <input type="number" id="sellPrice" />
 
-<label for="sellSite">販売先</label>
-<select id="sellSite"></select>
-<div id="sellFee" class="fee-info"></div>
+  <button onclick="calculateProfit()">利益を計算</button>
 
-<label for="sellPrice">販売価格 (円)</label>
-<input type="number" id="sellPrice" min="0" step="1" />
+  <div class="result" id="result"></div>
 
-<button id="calcBtn">利益を計算する</button>
-<button id="copyBtn">計算結果をコピーする</button>
+  <script>
+    function calculateProfit() {
+      const buy = Number(document.getElementById('buyPrice').value);
+      const sell = Number(document.getElementById('sellPrice').value);
 
-<div id="result" class="result"></div>
+      const sellFeePercent = 0.09;
+      const processFeePercent = 0.03;
+      const shipping = 1200;
 
-<script>
-  // サイト情報：手数料（%）、送料（円）、決済処理手数料（%）
-  const sites = [
-    { id: "nike", name: "NIKE公式", fee: 0.0, shipping: 0, paymentFee: 0.0, type: "purchase" },
-    { id: "snkrdunk_buy", name: "スニダン（購入）", fee: 6.5, shipping: 1200, paymentFee: 0.0, type: "purchase" },
-    { id: "stockx_buy", name: "StockX（購入）", fee: 9.0, shipping: 1200, paymentFee: 3.0, type: "purchase" },
-    { id: "xebio", name: "ゼビオ", fee: 0.0, shipping: 1200, paymentFee: 0.0, type: "purchase" },
-    { id: "stockx_sell", name: "StockX（販売）", fee: 9.0, shipping: 1200, paymentFee: 3.0, type: "sell" },
-    { id: "snkrdunk_sell", name: "スニダン（販売）", fee: 9.0, shipping: 1200, paymentFee: 0.0, type: "sell" }
-  ];
+      const sellFee = sell * sellFeePercent;
+      const processFee = sell * processFeePercent;
 
-  const styleCodeInput = document.getElementById("styleCode");
-  const sizeSelect = document.getElementById("size");
-  const purchaseSiteSelect = document.getElementById("purchaseSite");
-  const purchasePriceInput = document.getElementById("purchasePrice");
-  const sellSiteSelect = document.getElementById("sellSite");
-  const sellPriceInput = document.getElementById("sellPrice");
-  const purchaseFeeDiv = document.getElementById("purchaseFee");
-  const sellFeeDiv = document.getElementById("sellFee");
-  const calcBtn = document.getElementById("calcBtn");
-  const copyBtn = document.getElementById("copyBtn");
-  const resultDiv = document.getElementById("result");
+      const netProfit = sell - sellFee - processFee - shipping - buy;
+      const profitRate = (netProfit / buy) * 100;
 
-  // サイズのプルダウン作成（22.0cm～31.0cm、0.5刻み）
-  function initSizes() {
-    for (let size = 22.0; size <= 31.0; size += 0.5) {
-      let option = document.createElement("option");
-      option.value = size.toFixed(1);
-      option.textContent = size.toFixed(1);
-      sizeSelect.appendChild(option);
+      document.getElementById('result').innerHTML =
+        `利益：${netProfit.toFixed(0)}円<br>利益率：${profitRate.toFixed(1)}%`;
     }
-  }
-
-  // サイトのプルダウン作成
-  function populateSites() {
-    // 仕入れ先
-    sites.filter(s => s.type === "purchase").forEach(site => {
-      let option = document.createElement("option");
-      option.value = site.id;
-      option.textContent = site.name;
-      purchaseSiteSelect.appendChild(option);
-    });
-    // 販売先
-    sites.filter(s => s.type === "sell").forEach(site => {
-      let option = document.createElement("option");
-      option.value = site.id;
-      option.textContent = site.name;
-      sellSiteSelect.appendChild(option);
-    });
-  }
-
-  // 選択中の仕入れ先・販売先の手数料・送料・決済手数料表示
-  function updateFeeInfo() {
-    const purchaseSite = sites.find(s => s.id === purchaseSiteSelect.value);
-    const sellSite = sites.find(s => s.id === sellSiteSelect.value);
-
-    if (purchaseSite) {
-      purchaseFeeDiv.textContent = `手数料: ${purchaseSite.fee}%、送料: ${purchaseSite.shipping}円、決済手数料: ${purchaseSite.paymentFee}%`;
-    } else {
-      purchaseFeeDiv.textContent = "";
-    }
-    if (sellSite) {
-      sellFeeDiv.textContent = `手数料: ${sellSite.fee}%、送料: ${sellSite.shipping}円、決済手数料: ${sellSite.paymentFee}%`;
-    } else {
-      sellFeeDiv.textContent = "";
-    }
-  }
-
-  // 利益計算
-  function calculateProfit() {
-    const purchaseSite = sites.find(s => s.id === purchaseSiteSelect.value);
-    const sellSite = sites.find(s => s.id === sellSiteSelect.value);
-    const purchasePrice = Number(purchasePriceInput.value);
-    const sellPrice = Number(sellPriceInput.value);
-    const styleCode = styleCodeInput.value.trim();
-    const size = sizeSelect.value;
-
-    if (!styleCode) {
-      alert("スタイルコードを入力してください。");
-      return;
-    }
-    if (!purchaseSite || !sellSite) {
-      alert("仕入れ先・販売先を選択してください。");
-      return;
-    }
-    if (isNaN(purchasePrice) || purchasePrice <= 0) {
-      alert("正しい仕入価格を入力してください。");
-      return;
-    }
-    if (isNaN(sellPrice) || sellPrice <= 0) {
-      alert("正しい販売価格を入力してください。");
-      return;
-    }
-
-    // 仕入れ総コスト = 仕入価格 + 送料 + 仕入手数料（%）＋決済手数料（%）を含む計算
-    const purchaseFeeAmount = purchasePrice * (purchaseSite.fee / 100);
-    const purchasePaymentFeeAmount = purchasePrice * (purchaseSite.paymentFee / 100);
-    const totalPurchaseCost = purchasePrice + purchaseFeeAmount + purchasePaymentFeeAmount + purchaseSite.shipping;
-
-    // 販売総収入 = 販売価格 - (販売手数料％＋決済手数料％) - 送料
-    const sellFeeAmount = sellPrice * (sellSite.fee / 100);
-    const sellPaymentFeeAmount = sellPrice * (sellSite.paymentFee / 100);
-    const totalSellCost = sellFeeAmount + sellPaymentFeeAmount + sellSite.shipping;
-    const netSellIncome = sellPrice - totalSellCost;
-
-    const profit = netSellIncome - totalPurchaseCost;
-    const profitRate = ((profit / totalPurchaseCost) * 100).toFixed(2);
-
-    resultDiv.innerHTML = `
-      <strong>利益額：</strong> ${profit.toFixed(0)} 円<br/>
-      <strong>利益率：</strong> ${profitRate} %
-    `;
-
-    saveToLocalStorage();
-  }
-
-  // 結果をコピー
-  function copyResult() {
-    const styleCode = styleCodeInput.value.trim();
-    const size = sizeSelect.value;
-    const purchaseSite = purchaseSiteSelect.options[purchaseSiteSelect.selectedIndex].text;
-    const sellSite = sellSiteSelect.options[sellSiteSelect.selectedIndex].text;
-    const profitText = resultDiv.textContent.trim();
-
-    if (!profitText) {
-      alert("先に利益を計算してください。");
-      return;
-    }
-
-    const text = `スタイルコード: ${styleCode}
-サイズ: ${size}cm
-仕入先: ${purchaseSite}
-販売先: ${sellSite}
-${profitText}`;
-
-    navigator.clipboard.writeText(text).then(() => {
-      alert("計算結果をコピーしました！");
-    }, () => {
-      alert("コピーに失敗しました。手動でコピーしてください。");
-    });
-  }
-
-  // ローカルストレージに保存
-  function saveToLocalStorage() {
-    const data = {
-      styleCode: styleCodeInput.value,
-      size: sizeSelect.value,
-      purchaseSite: purchaseSiteSelect.value,
-      purchasePrice: purchasePriceInput.value,
-      sellSite: sellSiteSelect.value,
-      sellPrice: sellPriceInput.value
-    };
-    localStorage.setItem('profitSimData', JSON.stringify(data));
-  }
-
-  // ローカルストレージから読み込み
-  function loadFromLocalStorage() {
-    const data = JSON.parse(localStorage.getItem('profitSimData'));
-    if (data) {
-      styleCodeInput.value = data.styleCode || "";
-      sizeSelect.value = data.size || "22.0";
-      purchaseSiteSelect.value = data.purchaseSite || "nike";
-      purchasePriceInput.value = data.purchasePrice || "";
-      sellSiteSelect.value = data.sellSite || "stockx_sell";
-      sellPriceInput.value = data.sellPrice || "";
-      updateFeeInfo();
-    }
-  }
-
-  // 初期化
-  function init() {
-    initSizes();
-    populateSites();
-    updateFeeInfo();
-    loadFromLocalStorage();
-  }
-
-  purchaseSiteSelect.addEventListener('change', updateFeeInfo);
-  sellSiteSelect.addEventListener('change', updateFeeInfo);
-  calcBtn.addEventListener('click', calculateProfit);
-  copyBtn.addEventListener('click', copyResult);
-
-  init();
-</script>
-
+  </script>
 </body>
 </html>
